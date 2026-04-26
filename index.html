@@ -6,398 +6,428 @@
 <title>Sky Play — VPN Grátis</title>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --neon: #00f5ff;
-    --purple: #a855f7;
-    --green: #00ff88;
-    --bg: #04080f;
-    --card: rgba(0,245,255,0.03);
-    --border: rgba(0,245,255,0.12);
-  }
+:root {
+  --neon: #00f5ff;
+  --purple: #a855f7;
+  --green: #00ff88;
+  --bg: #04080f;
+  --card: rgba(0,245,255,0.04);
+  --border: rgba(0,245,255,0.15);
+}
 
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: #c8e6f0;
-    font-family: 'Exo 2', sans-serif;
-    overflow-x: hidden;
-  }
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: #c8e6f0;
+  font-family: 'Exo 2', sans-serif;
+  overflow-x: hidden;
+}
 
-  #canvas-bg {
-    position: fixed; inset: 0; z-index: 0;
-    pointer-events: none;
-  }
+/* Canvas fica atrás de tudo */
+#canvas-bg {
+  position: fixed; inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
 
-  body::after {
-    content: '';
-    position: fixed; inset: 0; z-index: 1;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-    pointer-events: none;
-    opacity: 0.5;
-  }
+/* Ruído — pointer-events: none garante que não bloqueie cliques */
+.noise {
+  position: fixed; inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
 
-  /* ── LOGO ── */
-  .logo {
-    position: fixed; top: 24px; left: 32px;
-    z-index: 50;
-    display: flex; align-items: center; gap: 10px;
-    animation: fadeDown 0.6s ease both;
-  }
+/* Scan line */
+.scanline {
+  position: fixed; left: 0; top: -2px;
+  width: 100%; height: 2px;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--neon), var(--purple), transparent);
+  opacity: 0.25;
+  animation: scan 5s linear infinite;
+}
+@keyframes scan { from { top: -2px; } to { top: 100%; } }
 
-  .logo-icon {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--neon), var(--purple));
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 0 18px rgba(0,245,255,0.4);
-  }
+/* Logo */
+.logo {
+  position: fixed; top: 22px; left: 28px;
+  z-index: 10;
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--neon), var(--purple));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 0 18px rgba(0,245,255,0.4);
+}
+.logo-text { font-size: 1.15rem; font-weight: 900; color: #fff; letter-spacing: 1px; }
+.logo-text span { color: var(--neon); }
 
-  .logo-text {
-    font-size: 1.2rem;
-    font-weight: 900;
-    letter-spacing: 1px;
-    color: #fff;
-  }
-  .logo-text span { color: var(--neon); }
+/* HERO */
+.hero {
+  position: relative;
+  z-index: 3;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+}
 
-  /* ── HERO ── */
-  .hero {
-    position: relative; z-index: 2;
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center;
-    padding: 40px 20px;
-  }
+.badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--neon);
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: rgba(0,245,255,0.05);
+  padding: 6px 20px;
+  border-radius: 2px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.7s 0.1s ease both;
+}
 
-  .badge {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--neon);
-    text-transform: uppercase;
-    border: 1px solid var(--border);
-    padding: 6px 20px;
-    border-radius: 2px;
-    margin-bottom: 28px;
-    animation: fadeDown 0.7s 0.1s ease both;
-    background: rgba(0,245,255,0.04);
-  }
+h1 {
+  font-size: clamp(3.2rem, 9vw, 7rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -3px;
+  margin-bottom: 16px;
+  animation: fadeUp 0.7s 0.2s ease both;
+  color: #fff;
+}
+h1 .sky  { color: var(--neon);   text-shadow: 0 0 30px rgba(0,245,255,0.5); }
+h1 .play { color: var(--purple); text-shadow: 0 0 30px rgba(168,85,247,0.5); }
 
-  h1 {
-    font-size: clamp(3rem, 8vw, 6.5rem);
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -3px;
-    margin-bottom: 16px;
-    animation: fadeDown 0.7s 0.2s ease both;
-    color: #fff;
-  }
+.sub {
+  font-size: 1rem;
+  color: rgba(200,230,240,0.5);
+  max-width: 400px;
+  line-height: 1.7;
+  margin-bottom: 44px;
+  animation: fadeUp 0.7s 0.3s ease both;
+}
 
-  h1 .sky { color: var(--neon); text-shadow: 0 0 30px rgba(0,245,255,0.5), 0 0 80px rgba(0,245,255,0.2); }
-  h1 .play { color: var(--purple); text-shadow: 0 0 30px rgba(168,85,247,0.5), 0 0 80px rgba(168,85,247,0.2); }
+/* BOTÃO PRINCIPAL */
+.btn-main {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 12px;
+  background: transparent;
+  border: 2px solid var(--neon);
+  color: var(--neon);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 17px 52px;
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color 0.3s, box-shadow 0.3s;
+  animation: fadeUp 0.7s 0.4s ease both;
+  box-shadow: 0 0 28px rgba(0,245,255,0.18);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.btn-main::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--neon), var(--purple));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+  z-index: 0;
+}
+.btn-main:hover::before,
+.btn-main:active::before { transform: scaleX(1); }
+.btn-main:hover,
+.btn-main:active { color: #04080f; box-shadow: 0 0 55px rgba(0,245,255,0.45); }
+.btn-main > * { position: relative; z-index: 1; }
+.btn-main svg { width: 20px; height: 20px; transition: transform 0.3s; }
+.btn-main:hover svg { transform: translateY(4px); }
 
-  .sub {
-    font-size: 1rem;
-    color: rgba(200,230,240,0.5);
-    max-width: 400px;
-    line-height: 1.7;
-    margin-bottom: 48px;
-    animation: fadeDown 0.7s 0.3s ease both;
-  }
+/* Stats */
+.stats {
+  display: flex; gap: 48px;
+  margin-top: 52px;
+  animation: fadeUp 0.7s 0.55s ease both;
+}
+.stat { text-align: center; }
+.stat-val {
+  font-size: 1.9rem; font-weight: 900;
+  background: linear-gradient(135deg, var(--neon), var(--purple));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-lab {
+  font-size: 0.62rem; letter-spacing: 2.5px;
+  color: rgba(200,230,240,0.35);
+  text-transform: uppercase;
+  font-family: 'Share Tech Mono', monospace;
+  margin-top: 2px;
+}
 
-  /* ── MAIN BUTTON ── */
-  .btn-main {
-    position: relative;
-    display: inline-flex; align-items: center; gap: 12px;
-    background: transparent;
-    border: 2px solid var(--neon);
-    color: var(--neon);
-    font-family: 'Exo 2', sans-serif;
-    font-size: 1rem;
-    font-weight: 800;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 17px 52px;
-    border-radius: 4px;
-    cursor: pointer;
-    overflow: hidden;
-    transition: color 0.3s, box-shadow 0.3s;
-    animation: fadeDown 0.7s 0.4s ease both;
-    box-shadow: 0 0 25px rgba(0,245,255,0.15), inset 0 0 25px rgba(0,245,255,0.02);
-  }
+/* OVERLAY / MODAL */
+.overlay {
+  position: fixed; inset: 0;
+  z-index: 200;
+  background: rgba(4,8,15,0.93);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+.overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
 
-  .btn-main::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(90deg, var(--neon), var(--purple));
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
-    z-index: 0;
-  }
+.modal {
+  width: 100%; max-width: 820px;
+  background: #06101e;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 32px 28px;
+  transform: translateY(24px) scale(0.97);
+  transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 0 80px rgba(0,245,255,0.07);
+}
+.overlay.open .modal {
+  transform: translateY(0) scale(1);
+}
 
-  .btn-main:hover::before { transform: scaleX(1); }
-  .btn-main:hover { color: #04080f; box-shadow: 0 0 60px rgba(0,245,255,0.4), 0 0 30px rgba(168,85,247,0.3); }
-  .btn-main span, .btn-main svg { position: relative; z-index: 1; }
+.modal-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-title { font-size: 1.2rem; font-weight: 900; color: #fff; }
+.modal-title span { color: var(--neon); }
+.modal-sub {
+  font-size: 0.65rem; color: rgba(200,230,240,0.35);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 1px; margin-top: 4px;
+}
+.close-btn {
+  background: none;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: rgba(200,230,240,0.5);
+  width: 34px; height: 34px;
+  border-radius: 4px;
+  font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.close-btn:hover,
+.close-btn:active { color: var(--neon); border-color: var(--neon); background: rgba(0,245,255,0.07); }
 
-  .btn-main svg { width: 20px; height: 20px; transition: transform 0.3s; }
-  .btn-main:hover svg { transform: translateY(4px); }
+/* ABAS PC / CELULAR */
+.tabs {
+  display: flex; gap: 8px;
+  margin-bottom: 22px;
+}
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: rgba(200,230,240,0.5);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.25s;
+  -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.tab-btn.active {
+  background: rgba(0,245,255,0.1);
+  border-color: var(--neon);
+  color: var(--neon);
+  box-shadow: 0 0 20px rgba(0,245,255,0.12);
+}
+.tab-btn:hover:not(.active) {
+  border-color: rgba(0,245,255,0.4);
+  color: rgba(200,230,240,0.8);
+}
 
-  /* ── STATS ── */
-  .stats {
-    display: flex; gap: 48px; margin-top: 56px;
-    animation: fadeDown 0.7s 0.55s ease both;
-  }
-  .stat { text-align: center; }
-  .stat-val {
-    font-size: 1.9rem; font-weight: 900;
-    background: linear-gradient(135deg, var(--neon), var(--purple));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .stat-lab {
-    font-size: 0.65rem; letter-spacing: 2.5px;
-    color: rgba(200,230,240,0.35);
-    text-transform: uppercase;
-    font-family: 'Share Tech Mono', monospace;
-    margin-top: 2px;
-  }
+/* Painéis */
+.tab-panel {
+  display: none;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+.tab-panel.active { display: grid; }
 
-  /* ── OVERLAY ── */
-  .overlay {
-    position: fixed; inset: 0; z-index: 100;
-    background: rgba(4,8,15,0.94);
-    backdrop-filter: blur(14px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.4s;
-  }
-  .overlay.open { opacity: 1; pointer-events: all; }
+/* Card VPN */
+.vpn-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 14px 14px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+  text-align: center;
+  position: relative; overflow: hidden;
+  transition: border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.vpn-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neon), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.vpn-card:hover {
+  border-color: rgba(0,245,255,0.4);
+  background: rgba(0,245,255,0.07);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0,245,255,0.08);
+}
+.vpn-card:hover::before { opacity: 1; }
 
-  .modal {
-    width: 100%; max-width: 820px;
-    background: rgba(4,8,15,0.99);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 38px 34px;
-    transform: translateY(28px) scale(0.97);
-    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 0 80px rgba(0,245,255,0.06);
-  }
-  .overlay.open .modal { transform: translateY(0) scale(1); }
+.vpn-icon {
+  width: 50px; height: 50px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.vpn-name { font-size: 0.88rem; font-weight: 800; color: #fff; }
+.vpn-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 1.5px;
+  padding: 3px 10px; border-radius: 2px;
+  text-transform: uppercase;
+  background: rgba(0,255,136,0.1);
+  color: var(--green);
+  border: 1px solid rgba(0,255,136,0.25);
+}
+.vpn-info {
+  font-size: 0.65rem;
+  color: rgba(200,230,240,0.38);
+  font-family: 'Share Tech Mono', monospace;
+}
 
-  .modal-head {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 28px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-  }
+.dl-btn {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(0,245,255,0.25);
+  color: rgba(200,230,240,0.75);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 8px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.dl-btn:hover,
+.dl-btn:active {
+  background: var(--neon);
+  color: #04080f;
+  border-color: var(--neon);
+  box-shadow: 0 0 16px rgba(0,245,255,0.35);
+}
 
-  .modal-title { font-size: 1.3rem; font-weight: 900; color: #fff; letter-spacing: 0.5px; }
-  .modal-title span { color: var(--neon); }
-  .modal-sub {
-    font-size: 0.75rem;
-    color: rgba(200,230,240,0.35);
-    font-family: 'Share Tech Mono', monospace;
-    letter-spacing: 1px;
-    margin-top: 4px;
-  }
+/* BARRA DE PROGRESSO */
+.prog-wrap {
+  position: fixed;
+  bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #06101e;
+  border: 1px solid rgba(0,245,255,0.25);
+  border-radius: 6px;
+  padding: 16px 24px;
+  z-index: 999;
+  min-width: 270px;
+  max-width: 90vw;
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s;
+  box-shadow: 0 0 40px rgba(0,245,255,0.1);
+  pointer-events: none;
+}
+.prog-wrap.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.prog-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem; letter-spacing: 1px;
+  color: var(--green);
+  margin-bottom: 10px;
+  display: flex; justify-content: space-between;
+}
+.prog-track {
+  height: 4px;
+  background: rgba(0,245,255,0.08);
+  border-radius: 2px; overflow: hidden;
+}
+.prog-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--neon), var(--purple));
+  border-radius: 2px;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 10px rgba(0,245,255,0.5);
+}
 
-  .close-btn {
-    background: none; border: 1px solid var(--border); cursor: pointer;
-    color: rgba(200,230,240,0.4);
-    font-size: 16px; width: 32px; height: 32px;
-    border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    transition: color 0.2s, border-color 0.2s, background 0.2s;
-    flex-shrink: 0;
-  }
-  .close-btn:hover { color: var(--neon); border-color: var(--neon); background: rgba(0,245,255,0.06); }
+/* Footer */
+.footer {
+  position: fixed; bottom: 12px; right: 18px;
+  z-index: 4;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 2px;
+  color: rgba(200,230,240,0.18);
+  pointer-events: none;
+}
 
-  /* ── VPN GRID ── */
-  .vpn-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
-    gap: 14px;
-  }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-  .vpn-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px 16px 16px;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-    text-align: center;
-    position: relative; overflow: hidden;
-    transition: border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
-  }
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.2); border-radius: 2px; }
 
-  .vpn-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--neon), transparent);
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .vpn-card:hover {
-    border-color: rgba(0,245,255,0.35);
-    background: rgba(0,245,255,0.06);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 32px rgba(0,245,255,0.08);
-  }
-  .vpn-card:hover::before { opacity: 1; }
-
-  .vpn-icon {
-    width: 50px; height: 50px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    position: relative;
-  }
-
-  .vpn-name { font-size: 0.9rem; font-weight: 800; color: #fff; letter-spacing: 0.3px; }
-
-  .vpn-tag {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 1.5px;
-    padding: 3px 10px;
-    border-radius: 2px;
-    text-transform: uppercase;
-    background: rgba(0,255,136,0.12);
-    color: var(--green);
-    border: 1px solid rgba(0,255,136,0.25);
-  }
-
-  .vpn-platform {
-    font-size: 0.68rem;
-    color: rgba(200,230,240,0.38);
-    font-family: 'Share Tech Mono', monospace;
-  }
-
-  /* ── OS BUTTONS ── */
-  .os-btns {
-    display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
-    width: 100%; margin-top: 2px;
-  }
-
-  .os-btn {
-    flex: 1; min-width: 60px;
-    background: transparent;
-    border: 1px solid rgba(0,245,255,0.2);
-    color: rgba(200,230,240,0.7);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 7px 4px;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 4px;
-  }
-
-  .os-btn:hover {
-    background: var(--neon);
-    color: #04080f;
-    border-color: var(--neon);
-    box-shadow: 0 0 16px rgba(0,245,255,0.35);
-  }
-
-  /* ── PROGRESS BAR ── */
-  .progress-wrap {
-    position: fixed;
-    bottom: 32px; left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: rgba(4,8,15,0.96);
-    border: 1px solid rgba(0,245,255,0.25);
-    border-radius: 6px;
-    padding: 16px 24px;
-    z-index: 999;
-    min-width: 280px;
-    transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s;
-    opacity: 0;
-    box-shadow: 0 0 40px rgba(0,245,255,0.1);
-  }
-  .progress-wrap.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-  .prog-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    color: var(--green);
-    margin-bottom: 10px;
-    display: flex; justify-content: space-between;
-  }
-
-  .prog-bar-track {
-    height: 4px;
-    background: rgba(0,245,255,0.1);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .prog-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--neon), var(--purple));
-    border-radius: 2px;
-    width: 0%;
-    transition: width 0.1s linear;
-    box-shadow: 0 0 10px rgba(0,245,255,0.5);
-  }
-
-  /* ── SCAN LINE ── */
-  .scanline {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 1.5px;
-    background: linear-gradient(90deg, transparent, var(--neon), var(--purple), transparent);
-    opacity: 0.2;
-    z-index: 3;
-    animation: scan 5s linear infinite;
-  }
-  @keyframes scan { from { top: -2px; } to { top: 100%; } }
-
-  @keyframes fadeDown {
-    from { opacity: 0; transform: translateY(-16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.2); border-radius: 2px; }
-
-  /* footer */
-  .footer {
-    position: fixed; bottom: 14px; right: 20px;
-    z-index: 5;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 2px;
-    color: rgba(200,230,240,0.2);
-  }
-
-  @media (max-width: 500px) {
-    .stats { gap: 28px; }
-    .modal { padding: 24px 16px; }
-    .vpn-grid { grid-template-columns: 1fr 1fr; }
-    .logo { left: 16px; top: 16px; }
-  }
+@media (max-width: 500px) {
+  .stats { gap: 26px; }
+  .modal { padding: 22px 14px; }
+  .tab-panel { grid-template-columns: 1fr 1fr !important; }
+  h1 { letter-spacing: -2px; }
+  .tabs { flex-direction: column; }
+}
 </style>
 </head>
 <body>
 
 <canvas id="canvas-bg"></canvas>
+<div class="noise"></div>
 <div class="scanline"></div>
 
-<!-- LOGO -->
 <div class="logo">
   <div class="logo-icon">🎮</div>
   <div class="logo-text"><span>Sky</span>Play</div>
@@ -411,10 +441,11 @@
 
   <h1><span class="sky">Sky</span><span class="play">Play</span><br>VPN</h1>
 
-  <p class="sub">Baixe qualquer VPN direto no seu dispositivo.<br>Sem cadastro. Sem redirecionamento. Sem complicação.</p>
+  <p class="sub">Baixe qualquer VPN direto no seu dispositivo.<br>Sem cadastro. Sem redirecionamento. Simples assim.</p>
 
   <button class="btn-main" id="openBtn">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 3v13M12 16l-5-5M12 16l5-5"/>
       <path d="M3 20h18"/>
     </svg>
@@ -422,240 +453,119 @@
   </button>
 
   <div class="stats">
-    <div class="stat">
-      <div class="stat-val">12</div>
-      <div class="stat-lab">VPNs</div>
-    </div>
-    <div class="stat">
-      <div class="stat-val">0</div>
-      <div class="stat-lab">Login</div>
-    </div>
-    <div class="stat">
-      <div class="stat-val">100%</div>
-      <div class="stat-lab">Grátis</div>
-    </div>
+    <div class="stat"><div class="stat-val">12</div><div class="stat-lab">VPNs</div></div>
+    <div class="stat"><div class="stat-val">0</div><div class="stat-lab">Login</div></div>
+    <div class="stat"><div class="stat-val">100%</div><div class="stat-lab">Grátis</div></div>
   </div>
 </section>
 
 <!-- MODAL -->
 <div class="overlay" id="overlay">
-  <div class="modal">
+  <div class="modal" id="modal">
     <div class="modal-head">
       <div>
         <div class="modal-title">Escolha sua <span>VPN Grátis</span></div>
-        <div class="modal-sub">CLIQUE NO SISTEMA PARA BAIXAR DIRETO</div>
+        <div class="modal-sub">SELECIONE O SISTEMA E BAIXE DIRETO</div>
       </div>
       <button class="close-btn" id="closeBtn">✕</button>
     </div>
-    <div class="vpn-grid" id="vpnGrid"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="pc">🖥️ PC / Computador</button>
+      <button class="tab-btn" data-tab="mobile">📱 Celular / Tablet</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-pc"></div>
+    <div class="tab-panel" id="tab-mobile"></div>
   </div>
 </div>
 
-<!-- PROGRESS TOAST -->
-<div class="progress-wrap" id="progressWrap">
+<div class="prog-wrap" id="progWrap">
   <div class="prog-label">
     <span id="progName">Baixando...</span>
     <span id="progPct">0%</span>
   </div>
-  <div class="prog-bar-track">
-    <div class="prog-bar-fill" id="progFill"></div>
+  <div class="prog-track">
+    <div class="prog-fill" id="progFill"></div>
   </div>
 </div>
 
 <script>
-// ─── VPN DATA — links diretos de download ───────────────────────────────────
-const vpns = [
-  {
-    name: "ProtonVPN",
-    icon: "🛡️",
-    color: "#7c3aed",
-    downloads: {
-      "🪟 Windows": "https://protonvpn.com/download/ProtonVPN_v3.3.2_x64.exe",
-      "🍎 macOS":   "https://protonvpn.com/download/ProtonVPN_mac_v3.3.2.dmg",
-      "🐧 Linux":   "https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-3_all.deb",
-      "📱 Android": "https://play.google.com/store/apps/details?id=ch.protonvpn.android"
-    }
-  },
-  {
-    name: "Windscribe",
-    icon: "💨",
-    color: "#0891b2",
-    downloads: {
-      "🪟 Windows": "https://windscribe.com/install/desktop/windows_exe_x64/en",
-      "🍎 macOS":   "https://windscribe.com/install/desktop/mac/en",
-      "🐧 Linux":   "https://windscribe.com/install/desktop/linux_deb_x64/en",
-      "📱 Android": "https://windscribe.com/install/desktop/android/en"
-    }
-  },
-  {
-    name: "Psiphon",
-    icon: "🌐",
-    color: "#1d4ed8",
-    downloads: {
-      "🪟 Windows": "https://psiphon3.com/PsiphonPortable.exe",
-      "📱 Android": "https://psiphon3.com/psiphon3.apk",
-      "🍎 iOS":     "https://apps.apple.com/us/app/psiphon/id1276263909"
-    }
-  },
-  {
-    name: "Lantern",
-    icon: "🔦",
-    color: "#7e22ce",
-    downloads: {
-      "🪟 Windows": "https://s3.amazonaws.com/lantern/lantern-installer.exe",
-      "🍎 macOS":   "https://s3.amazonaws.com/lantern/lantern-installer.dmg",
-      "🐧 Linux":   "https://s3.amazonaws.com/lantern/lantern-installer-64-bit.deb",
-      "📱 Android": "https://s3.amazonaws.com/lantern/lantern.apk"
-    }
-  },
-  {
-    name: "Hide.me",
-    icon: "👁️",
-    color: "#065f46",
-    downloads: {
-      "🪟 Windows": "https://hide.me/downloads/hideme_windows_latest.exe",
-      "🍎 macOS":   "https://hide.me/downloads/hideme_macos_latest.dmg",
-      "📱 Android": "https://hide.me/downloads/hideme_android_latest.apk",
-      "🐧 Linux":   "https://hide.me/downloads/hideme_linux_latest.deb"
-    }
-  },
-  {
-    name: "TunnelBear",
-    icon: "🐻",
-    color: "#92400e",
-    downloads: {
-      "🪟 Windows": "https://s3.amazonaws.com/tunnelbear/TunnelBear.exe",
-      "🍎 macOS":   "https://s3.amazonaws.com/tunnelbear/TunnelBear.dmg",
-      "📱 Android": "https://play.google.com/store/apps/details?id=com.tunnelbear.android.activity",
-    }
-  },
-  {
-    name: "Betternet",
-    icon: "🌀",
-    color: "#4338ca",
-    downloads: {
-      "🪟 Windows": "https://dl.betternet.co/setup/BetternetSetup.exe",
-      "📱 Android": "https://dl.betternet.co/apk/betternet.apk",
-      "🍎 macOS":   "https://dl.betternet.co/mac/Betternet.dmg"
-    }
-  },
-  {
-    name: "Touch VPN",
-    icon: "✋",
-    color: "#0f766e",
-    downloads: {
-      "🪟 Windows": "https://dl.touchvpn.net/TouchVPN-Setup.exe",
-      "📱 Android": "https://dl.touchvpn.net/TouchVPN.apk",
-      "🍎 macOS":   "https://dl.touchvpn.net/TouchVPN.dmg"
-    }
-  },
-  {
-    name: "UrbanVPN",
-    icon: "🏙️",
-    color: "#134e4a",
-    downloads: {
-      "🪟 Windows": "https://dl.urban-vpn.com/UrbanVPN-Setup.exe",
-      "📱 Android": "https://dl.urban-vpn.com/UrbanVPN.apk",
-      "🌐 Chrome":  "https://chrome.google.com/webstore/detail/urban-vpn-proxy/eppiocemhmnlbhjplcgkofciiegomcon"
-    }
-  },
-  {
-    name: "Hotspot Shield",
-    icon: "🔥",
-    color: "#b45309",
-    downloads: {
-      "🪟 Windows": "https://dl.hotspotshield.com/hss/download/Hotspot_Shield_Free_VPN.exe",
-      "🍎 macOS":   "https://dl.hotspotshield.com/hss/download/HotspotShield.dmg",
-      "📱 Android": "https://dl.hotspotshield.com/hss/download/HotspotShield.apk"
-    }
-  },
-  {
-    name: "Opera VPN",
-    icon: "🎭",
-    color: "#991b1b",
-    downloads: {
-      "🪟 Windows": "https://net.geo.opera.com/opera/stable/windows",
-      "🍎 macOS":   "https://net.geo.opera.com/opera/stable/mac",
-      "🐧 Linux":   "https://net.geo.opera.com/opera/stable/linux"
-    }
-  },
-  {
-    name: "VPNBook",
-    icon: "📖",
-    color: "#1e3a5f",
-    downloads: {
-      "🪟 Windows": "https://www.vpnbook.com/download/VPNBook.Windows.zip",
-      "🐧 Linux":   "https://www.vpnbook.com/download/VPNBook.Linux.zip",
-      "📱 Android": "https://www.vpnbook.com/download/VPNBook.Android.zip"
-    }
-  }
-];
-
-// ─── BUILD CARDS ────────────────────────────────────────────────────────────
-const grid = document.getElementById('vpnGrid');
-
-vpns.forEach(v => {
-  const card = document.createElement('div');
-  card.className = 'vpn-card';
-
-  const osHTML = Object.entries(v.downloads).map(([os, url]) =>
-    `<button class="os-btn" data-url="${url}" data-name="${v.name}" data-os="${os}">${os}</button>`
-  ).join('');
-
-  card.innerHTML = `
-    <div class="vpn-icon" style="background:${v.color}25; border:1px solid ${v.color}50">${v.icon}</div>
-    <div class="vpn-name">${v.name}</div>
-    <span class="vpn-tag">100% Grátis</span>
-    <div class="os-btns">${osHTML}</div>
-  `;
-
-  card.querySelectorAll('.os-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      triggerDownload(btn.dataset.url, btn.dataset.name, btn.dataset.os);
-    });
-  });
-
-  grid.appendChild(card);
-});
-
-// ─── MODAL ──────────────────────────────────────────────────────────────────
-const overlay = document.getElementById('overlay');
-document.getElementById('openBtn').addEventListener('click', () => overlay.classList.add('open'));
-document.getElementById('closeBtn').addEventListener('click', () => overlay.classList.remove('open'));
-overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
-
-// ─── DOWNLOAD COM BARRA DE PROGRESSO ────────────────────────────────────────
-const progressWrap = document.getElementById('progressWrap');
-const progName     = document.getElementById('progName');
-const progPct      = document.getElementById('progPct');
-const progFill     = document.getElementById('progFill');
-let progTimer;
-
-function triggerDownload(url, name, os) {
-  // Mostrar barra de progresso animada
-  showProgress(name, os);
-
-  // Criar link de download invisible e clicar
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = '';           // força download ao invés de abrir
-  a.target = '_self';        // não abre nova aba
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-function showProgress(name, os) {
-  clearInterval(progTimer);
-  let pct = 0;
-  progName.textContent = `⬇ ${name} ${os}`;
-  progPct.textContent = '0%';
-  progFill.style.width = '0%';
-  progressWrap.classList.add('show');
-
-  progTimer = setInterval(() => {
-    // Simula progresso (o download real ocorre em paralelo)
-    const step = pct < 70 ? Math.random() * 8 + 2 : Math.random() * 3 + 0.5;
-    pct = Math.min(pct 
+const vpns = {
+  pc: [
+    { name:"ProtonVPN",     icon:"🛡️", color:"#7c3aed", info:"Sem limite de dados",
+      btns:[{os:"Windows",url:"https://protonvpn.com/download/ProtonVPN_v3.3.2_x64.exe"},
+            {os:"macOS",  url:"https://protonvpn.com/download/ProtonVPN_mac_v3.3.2.dmg"},
+            {os:"Linux",  url:"https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.3-3_all.deb"}]},
+    { name:"Windscribe",    icon:"💨", color:"#0891b2", info:"10 GB/mês grátis",
+      btns:[{os:"Windows",url:"https://windscribe.com/install/desktop/windows_exe_x64/en"},
+            {os:"macOS",  url:"https://windscribe.com/install/desktop/mac/en"},
+            {os:"Linux",  url:"https://windscribe.com/install/desktop/linux_deb_x64/en"}]},
+    { name:"Psiphon",       icon:"🌐", color:"#1d4ed8", info:"Ilimitado · Sem cadastro",
+      btns:[{os:"Windows",url:"https://psiphon3.com/PsiphonPortable.exe"}]},
+    { name:"Lantern",       icon:"🔦", color:"#7e22ce", info:"Open-source",
+      btns:[{os:"Windows",url:"https://s3.amazonaws.com/lantern/lantern-installer.exe"},
+            {os:"macOS",  url:"https://s3.amazonaws.com/lantern/lantern-installer.dmg"},
+            {os:"Linux",  url:"https://s3.amazonaws.com/lantern/lantern-installer-64-bit.deb"}]},
+    { name:"Hide.me",       icon:"👁️", color:"#065f46", info:"10 GB/mês · Sem logs",
+      btns:[{os:"Windows",url:"https://hide.me/downloads/hideme_windows_latest.exe"},
+            {os:"macOS",  url:"https://hide.me/downloads/hideme_macos_latest.dmg"}]},
+    { name:"TunnelBear",    icon:"🐻", color:"#92400e", info:"500 MB/mês",
+      btns:[{os:"Windows",url:"https://s3.amazonaws.com/tunnelbear/TunnelBear.exe"},
+            {os:"macOS",  url:"https://s3.amazonaws.com/tunnelbear/TunnelBear.dmg"}]},
+    { name:"Hotspot Shield",icon:"🔥", color:"#b45309", info:"Básico grátis",
+      btns:[{os:"Windows",url:"https://dl.hotspotshield.com/hss/download/Hotspot_Shield_Free_VPN.exe"},
+            {os:"macOS",  url:"https://dl.hotspotshield.com/hss/download/HotspotShield.dmg"}]},
+    { name:"Opera VPN",     icon:"🎭", color:"#991b1b", info:"Grátis no navegador",
+      btns:[{os:"Windows",url:"https://net.geo.opera.com/opera/stable/windows"},
+            {os:"macOS",  url:"https://net.geo.opera.com/opera/stable/mac"},
+            {os:"Linux",  url:"https://net.geo.opera.com/opera/stable/linux"}]},
+    { name:"Betternet",     icon:"🌀", color:"#4338ca", info:"Sem cadastro",
+      btns:[{os:"Windows",url:"https://dl.betternet.co/setup/BetternetSetup.exe"},
+            {os:"macOS",  url:"https://dl.betternet.co/mac/Betternet.dmg"}]},
+    { name:"VPNBook",       icon:"📖", color:"#1e3a5f", info:"OpenVPN gratuito",
+      btns:[{os:"Windows",url:"https://www.vpnbook.com/download/VPNBook.Windows.zip"},
+            {os:"Linux",  url:"https://www.vpnbook.com/download/VPNBook.Linux.zip"}]},
+    { name:"Touch VPN",     icon:"✋", color:"#0f766e", info:"Ilimitado",
+      btns:[{os:"Windows",url:"https://dl.touchvpn.net/TouchVPN-Setup.exe"},
+            {os:"macOS",  url:"https://dl.touchvpn.net/TouchVPN.dmg"}]},
+    { name:"UrbanVPN",      icon:"🏙️", color:"#134e4a", info:"Peer-to-peer",
+      btns:[{os:"Windows",url:"https://dl.urban-vpn.com/UrbanVPN-Setup.exe"}]}
+  ],
+  mobile: [
+    { name:"ProtonVPN",     icon:"🛡️", color:"#7c3aed", info:"Sem limite de dados",
+      btns:[{os:"Android APK",url:"https://protonvpn.com/download/ProtonVPN.apk"},
+            {os:"Play Store", url:"https://play.google.com/store/apps/details?id=ch.protonvpn.android"},
+            {os:"App Store",  url:"https://apps.apple.com/app/proton-vpn/id1437005085"}]},
+    { name:"Windscribe",    icon:"💨", color:"#0891b2", info:"10 GB/mês grátis",
+      btns:[{os:"Android APK",url:"https://windscribe.com/install/desktop/android/en"},
+            {os:"Play Store", url:"https://play.google.com/store/apps/details?id=com.windscribe.vpn"},
+            {os:"App Store",  url:"https://apps.apple.com/app/windscribe-vpn/id1129435228"}]},
+    { name:"Psiphon",       icon:"🌐", color:"#1d4ed8", info:"Ilimitado · Sem cadastro",
+      btns:[{os:"Android APK",url:"https://psiphon3.com/psiphon3.apk"},
+            {os:"Play Store", url:"https://play.google.com/store/apps/details?id=com.psiphon3"},
+            {os:"App Store",  url:"https://apps.apple.com/us/app/psiphon/id1276263909"}]},
+    { name:"Lantern",       icon:"🔦", color:"#7e22ce", info:"Open-source",
+      btns:[{os:"Android APK",url:"https://s3.amazonaws.com/lantern/lantern.apk"},
+            {os:"Play Store", url:"https://play.google.com/store/apps/details?id=org.getlantern.lantern"}]},
+    { name:"Hide.me",       icon:"👁️", color:"#065f46", info:"10 GB/mês",
+      btns:[{os:"Android APK",url:"https://hide.me/downloads/hideme_android_latest.apk"},
+            {os:"Play Store", url:"https://play.google.com/store/apps/details?id=hideme.vpn.hideme"},
+            {os:"App Store",  url:"https://apps.apple.com/app/hide-me-vpn/id953040671"}]},
+    { name:"TunnelBear",    icon:"🐻", color:"#92400e", info:"500 MB/mês",
+      btns:[{os:"Play Store",url:"https://play.google.com/store/apps/details?id=com.tunnelbear.android.activity"},
+            {os:"App Store", url:"https://apps.apple.com/app/tunnelbear-vpn/id564842283"}]},
+    { name:"Hotspot Shield",icon:"🔥", color:"#b45309", info:"Básico grátis",
+      btns:[{os:"Android APK",url:"https://dl.hotspotshield.com/hss/download/HotspotShield.apk"},
+            {os:"Play Store", url:"https://play.google.com/store/apps/details?id=com.anchorfree.hydraclient.android"},
+            {os:"App Store",  url:"https://apps.apple.com/app/hotspot-shield-vpn/id443369807"}]},
+    { name:"Betternet",     icon:"🌀", color:"#4338ca", info:"Sem cadastro",
+      btns:[{os:"Android APK",url:"https://dl.betternet.co/apk/betternet.apk"},
+            {os:"Play Store", url:"https://play.google.com/store/apps/details?id=com.freevpn.betternet"},
+            {os:"App Store",  url:"https://apps.apple.com/app/betternet-unlimited-free-vpn/id946659566"}]},
+    { name:"Touch VPN",     icon:"✋", color:"#0f766e", info:"Ilimitado",
+      btns:[{os:"Android APK",url:"https://dl.touchvpn.net/TouchVPN.apk"},
+            {os:"Play Store", url:"https://play.google.com/store/apps/details?id=touch.vpn"},
+            {os:"App Store",  url:"https://apps.apple.com/app/touch-vpn-secure-vpn-proxy/id952009879"}]},
+    { name:"UrbanVPN",      icon:"🏙️", color:"#134e4a", info:"Peer-to-peer",
+      btns:[{os:"An
