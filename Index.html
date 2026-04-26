@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPN Free — Sem Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --neon: #00f5ff;
+    --neon2: #7b2fff;
+    --green: #00ff88;
+    --red: #ff003c;
+    --bg: #040a14;
+    --card: rgba(0,245,255,0.04);
+    --border: rgba(0,245,255,0.15);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: #c8e6f0;
+    font-family: 'Exo 2', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ── CANVAS BACKGROUND ── */
+  #canvas-bg {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; z-index: 2;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--neon);
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 6px 18px;
+    border-radius: 2px;
+    margin-bottom: 30px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  h1 {
+    font-size: clamp(2.8rem, 7vw, 6rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -2px;
+    margin-bottom: 18px;
+    animation: fadeDown 0.8s 0.15s ease both;
+  }
+
+  h1 span.glow {
+    color: var(--neon);
+    text-shadow: 0 0 20px var(--neon), 0 0 60px rgba(0,245,255,0.4);
+  }
+
+  .sub {
+    font-size: 1.05rem;
+    color: rgba(200,230,240,0.55);
+    max-width: 420px;
+    line-height: 1.6;
+    margin-bottom: 50px;
+    animation: fadeDown 0.8s 0.3s ease both;
+  }
+
+  /* ── MAIN BUTTON ── */
+  .btn-main {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 12px;
+    background: transparent;
+    border: 2px solid var(--neon);
+    color: var(--neon);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 18px 48px;
+    border-radius: 4px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: color 0.3s;
+    animation: fadeDown 0.8s 0.45s ease both;
+    box-shadow: 0 0 30px rgba(0,245,255,0.2), inset 0 0 30px rgba(0,245,255,0.03);
+  }
+
+  .btn-main::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--neon);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+    z-index: 0;
+  }
+
+  .btn-main:hover::before { transform: scaleX(1); }
+  .btn-main:hover { color: #040a14; box-shadow: 0 0 50px rgba(0,245,255,0.5); }
+
+  .btn-main span, .btn-main svg { position: relative; z-index: 1; }
+
+  .btn-main svg {
+    width: 22px; height: 22px;
+    transition: transform 0.3s;
+  }
+  .btn-main:hover svg { transform: translateY(3px); }
+
+  /* ── STATS ROW ── */
+  .stats {
+    display: flex; gap: 40px; margin-top: 60px;
+    animation: fadeDown 0.8s 0.6s ease both;
+  }
+  .stat { text-align: center; }
+  .stat-val {
+    font-size: 1.8rem; font-weight: 900;
+    color: var(--neon);
+    text-shadow: 0 0 12px rgba(0,245,255,0.5);
+  }
+  .stat-lab {
+    font-size: 0.7rem; letter-spacing: 2px;
+    color: rgba(200,230,240,0.4);
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* ── VPN MODAL OVERLAY ── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(4,10,20,0.92);
+    backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    width: 100%; max-width: 760px;
+    background: rgba(4,10,20,0.98);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 40px 36px;
+    transform: translateY(30px) scale(0.97);
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .overlay.open .modal { transform: translateY(0) scale(1); }
+
+  .modal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 30px;
+  }
+
+  .modal-title {
+    font-size: 1.4rem; font-weight: 900;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  .modal-title span { color: var(--neon); }
+
+  .close-btn {
+    background: none; border: none; cursor: pointer;
+    color: rgba(200,230,240,0.4);
+    font-size: 24px; line-height: 1;
+    transition: color 0.2s;
+  }
+  .close-btn:hover { color: var(--neon); }
+
+  /* ── VPN CARDS GRID ── */
+  .vpn-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .vpn-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 22px 18px;
+    cursor: pointer;
+    transition: border-color 0.25s, background 0.25s, transform 0.25s;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vpn-card::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,245,255,0.07), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .vpn-card:hover {
+    border-color: var(--neon);
+    background: rgba(0,245,255,0.08);
+    transform: translateY(-3px);
+  }
+  .vpn-card:hover::after { opacity: 1; }
+
+  .vpn-icon {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .vpn-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .vpn-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .tag-free { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+
+  .vpn-speed {
+    font-size: 0.75rem;
+    color: rgba(200,230,240,0.45);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .dl-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(0,245,255,0.3);
+    color: var(--neon);
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 9px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  .dl-btn:hover {
+    background: var(--neon);
+    color: #040a14;
+    box-shadow: 0 0 20px rgba(0,245,255,0.4);
+  }
+
+  /* ── DOWNLOAD TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 32px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.4);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    padding: 14px 28px;
+    border-radius: 4px;
+    z-index: 999;
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s;
+    opacity: 0;
+    white-space: nowrap;
+    box-shadow: 0 0 30px rgba(0,255,136,0.2);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ── SCAN LINE ── */
+  .scanline {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon), transparent);
+    opacity: 0.25;
+    z-index: 3;
+    animation: scan 4s linear infinite;
+  }
+  @keyframes scan { from { top: 0; } to { top: 100%; } }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-width: 480px) {
+    .stats { gap: 24px; }
+    .modal { padding: 28px 20px; }
+    .vpn-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="scanline"></div>
+
+<section class="hero">
+  <div class="badge">🔒 Conexão Segura &amp; Anônima</div>
+
+  <h1>Baixe sua<br><span class="glow">VPN Grátis</span></h1>
+
+  <p class="sub">Sem cadastro. Sem login. Sem cartão.<br>Apenas proteção total com um clique.</p>
+
+  <button class="btn-main" id="openBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2L12 15M12 15L7 10M12 15L17 10"/>
+      <rect x="3" y="18" width="18" height="3" rx="1"/>
+    </svg>
+    <span>Baixar VPN</span>
+  </button>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val">12+</div>
+      <div class="stat-lab">VPNs Grátis</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">0</div>
+      <div class="stat-lab">Login Necessário</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">100%</div>
+      <div class="stat-lab">Gratuito</div>
+    </div>
+  </div>
+</section>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Escolha sua <span>VPN Grátis</span></div>
+      <button class="close-btn" id="closeBtn">✕</button>
+    </div>
+
+    <div class="vpn-grid" id="vpnGrid"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const vpns = [
+  {
+    name: "ProtonVPN",
+    icon: "🛡️",
+    color: "#6d28d9",
+    speed: "Alta velocidade",
+    url: "https://protonvpn.com/download",
+    note: "Sem limite de dados"
+  },
+  {
+    name: "Windscribe",
+    icon: "💨",
+    color: "#0e7490",
+    speed: "10GB/mês grátis",
+    url: "https://windscribe.com/download",
+    note: "Sem login obrigatório"
+  },
+  {
+    name: "TunnelBear",
+    icon: "🐻",
+    color: "#92400e",
+    speed: "500MB/mês grátis",
+    url: "https://www.tunnelbear.com/download",
+    note: "Fácil de usar"
+  },
+  {
+    name: "Hide.me",
+    icon: "👁️",
+    color: "#065f46",
+    speed: "10GB/mês",
+    url: "https://hide.me/en/software",
+    note: "Sem logs"
+  },
+  {
+    name: "Hotspot Shield",
+    icon: "🔥",
+    color: "#b45309",
+    speed: "Básico grátis",
+    url: "https://www.hotspotshield.com/download/",
+    note: "Simples e rápido"
+  },
+  {
+    name: "Psiphon",
+    icon: "🌐",
+    color: "#1e40af",
+    speed: "Ilimitado",
+    url: "https://psiphon.ca/pt_BR/download.html",
+    note: "Sem cadastro"
+  },
+  {
+    name: "Lantern",
+    icon: "🔦",
+    color: "#6b21a8",
+    speed: "500MB/mês",
+    url: "https://getlantern.org/",
+    note: "Open-source"
+  },
+  {
+    name: "Opera VPN",
+    icon: "🎭",
+    color: "#991b1b",
+    speed: "Ilimitado (browser)",
+    url: "https://www.opera.com/pt-br/features/free-vpn",
+    note: "No navegador Opera"
+  },
+  {
+    name: "Touch VPN",
+    icon: "✋",
+    color: "#065f46",
+    speed: "Ilimitado",
+    url: "https://touchvpn.net/",
+    note: "Um toque, conectado"
+  },
+  {
+    name: "VPNBook",
+    icon: "📖",
+    color: "#1e3a5f",
+    speed: "Ilimitado",
+    url: "https://www.vpnbook.com/freevpn",
+    note: "OpenVPN grátis"
+  },
+  {
+    name: "Betternet",
+    icon: "🌀",
+    color: "#312e81",
+    speed: "Básico grátis",
+    url: "https://www.betternet.co/download/",
+    note: "Sem cadastro"
+  },
+  {
+    name: "UrbanVPN",
+    icon: "🏙️",
+    color: "#134e4a",
+    speed: "Ilimitado",
+    url: "https://www.urban-vpn.com/",
+    note: "Peer-to-peer"
+  }
+];
+
+// Build grid
+const grid = document.getElementById('vpnGrid');
+vpns.forEach(v => {
+  const card = document.createElement('div');
+  card.className = 'vpn-card';
+  card.innerHTML = `
+    <div class="vpn-icon" style="background:${v.color}22; border:1px solid ${v.color}55">${v.icon}</div>
+    <div class="vpn-name">${v.name}</div>
+    <span class="vpn-tag tag-free">100% Grátis</span>
+    <div class="vpn-speed">${v.speed}</div>
+    <button class="dl-btn">⬇ Baixar Agora</button>
+  `;
+  card.querySelector('.dl-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    startDownload(v);
+  });
+  card.addEventListener('click', () => startDownload(v));
+  grid.appendChild(card);
+});
+
+// Modal open/close
+const overlay = document.getElementById('overlay');
+document.getElementById('openBtn').addEventListener('click', () => overlay.classList.add('open'));
+document.getElementById('closeBtn').addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+
+// Download
+function startDownload(v) {
+  showToast(`⬇ Iniciando download — ${v.name}...`);
+  setTimeout(() => window.open(v.url, '_blank'), 600);
+}
+
+// Toast
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// ── CANVAS PARTICLE NETWORK ──
+const canvas = document.getElementById('canvas-bg');
+const ctx = canvas.getContext('2d');
+let W, H, particles;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function mkParticle() {
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    r: Math.random() * 1.5 + 0.5
+  };
+}
+
+function init() {
+  resize();
+  particles = Array.from({length: 90}, mkParticle);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw connections
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 140) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(0,245,255,${0.12 * (1 - dist/140)})`;
+        ctx.lineWidth = 0.6;
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Draw dots
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,245,255,0.5)';
+    ctx.fill();
+
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0 || p.x > W) p.vx *= -1;
+    if (p.y < 0 || p.y > H) p.vy *= -1;
+  });
+
+  requestAnimationFrame(draw);
+}
+
+window.addEventListener('resize', () => { resize(); });
+init();
+draw();
+</script>
+</body>
+</html>
+
